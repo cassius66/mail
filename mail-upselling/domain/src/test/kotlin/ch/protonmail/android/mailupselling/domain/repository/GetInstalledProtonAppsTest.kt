@@ -121,7 +121,8 @@ internal class GetInstalledProtonAppsTest {
             "me.proton.android.drive" to "v2",
             "me.proton.android.calendar" to "v3",
             "proton.android.pass" to "v4",
-            "me.proton.wallet.android" to "v5"
+            "me.proton.wallet.android" to "v5",
+            "me.proton.android.lumo" to "v6"
         )
         mockInstalled(*all.toTypedArray())
 

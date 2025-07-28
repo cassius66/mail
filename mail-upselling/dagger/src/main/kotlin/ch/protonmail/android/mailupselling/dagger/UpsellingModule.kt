@@ -29,6 +29,7 @@ import ch.protonmail.android.mailupselling.domain.annotations.DriveSpotlightEnab
 import ch.protonmail.android.mailupselling.domain.annotations.ForceOneClickUpsellingDetailsOverride
 import ch.protonmail.android.mailupselling.domain.annotations.HeaderUpsellSocialProofLayoutEnabled
 import ch.protonmail.android.mailupselling.domain.annotations.HeaderUpsellVariantLayoutEnabled
+import ch.protonmail.android.mailupselling.domain.annotations.NPSEnabled
 import ch.protonmail.android.mailupselling.domain.annotations.OneClickUpsellingAlwaysShown
 import ch.protonmail.android.mailupselling.domain.annotations.OneClickUpsellingTelemetryEnabled
 import ch.protonmail.android.mailupselling.domain.annotations.SidebarUpsellingEnabled
@@ -48,6 +49,7 @@ import ch.protonmail.android.mailupselling.domain.usecase.featureflags.AlwaysSho
 import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsDriveSpotlightEnabled
 import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsHeaderUpsellSocialProofLayoutEnabled
 import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsHeaderUpsellVariantLayoutEnabled
+import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsNPSEnabled
 import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsOneClickUpsellingTelemetryEnabled
 import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsSidebarUpsellingEnabled
 import ch.protonmail.android.mailupselling.domain.usecase.featureflags.IsSignupPaidPlanSupportEnabled
@@ -100,6 +102,10 @@ object UpsellingModule {
     @Provides
     @DriveSpotlightEnabled
     fun provideDriveSpotlightEnabled(isEnabled: IsDriveSpotlightEnabled) = isEnabled(null)
+
+    @Provides
+    @NPSEnabled
+    fun provideNPSEnabled(isEnabled: IsNPSEnabled) = isEnabled(null)
 
     @Provides
     @HeaderUpsellSocialProofLayoutEnabled

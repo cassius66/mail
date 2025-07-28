@@ -29,23 +29,28 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import me.proton.core.featureflag.domain.entity.FeatureFlag
 import org.junit.Test
+import javax.inject.Provider
 import kotlin.test.assertEquals
 
 internal class ObserveNPSEligibilityTest {
 
     private val observePrimaryUser = mockk<ObservePrimaryUser>()
     private val observeMailFeature = mockk<ObserveMailFeature>()
+    private val npsEnabled = mockk<Provider<Boolean>>()
 
-    private val sut = ObserveNPSEligibility(
-        observePrimaryUser,
-        observeMailFeature
-    )
+    private val sut: ObserveNPSEligibility
+        get() = ObserveNPSEligibility(
+            observePrimaryUser,
+            observeMailFeature,
+            npsEnabled.get()
+        )
 
     private val user = UserSample.Primary
 
     @Test
     fun `should emit false when primary user is null`() = runTest {
         every { observePrimaryUser() } returns flowOf(null)
+        expectNPSEnabled(true)
         sut().test {
             assertEquals(false, awaitItem())
             awaitComplete()
@@ -53,9 +58,20 @@ internal class ObserveNPSEligibilityTest {
     }
 
     @Test
-    fun `should emit false when mail feature flag is disabled`() = runTest {
+    fun `should emit false when FF disabled`() = runTest {
         every { observePrimaryUser() } returns flowOf(user)
-        isFFEnabled(false)
+        expectNPSEnabled(false)
+        sut().test {
+            assertEquals(false, awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `should emit false when per-user feature flag is disabled`() = runTest {
+        every { observePrimaryUser() } returns flowOf(user)
+        expectPerUserFlagEnabled(false)
+        expectNPSEnabled(true)
 
         sut().test {
             assertEquals(false, awaitItem())
@@ -66,7 +82,8 @@ internal class ObserveNPSEligibilityTest {
     @Test
     fun `should emit true when feature enabled`() = runTest {
         every { observePrimaryUser() } returns flowOf(user)
-        isFFEnabled(true)
+        expectPerUserFlagEnabled(true)
+        expectNPSEnabled(true)
 
         sut().test {
             assertEquals(true, awaitItem())
@@ -74,8 +91,12 @@ internal class ObserveNPSEligibilityTest {
         }
     }
 
-    private fun isFFEnabled(enabled: Boolean) {
+    private fun expectPerUserFlagEnabled(enabled: Boolean) {
         every { observeMailFeature(user.userId, MailFeatureId.NPSFeedback) } returns
             flowOf(FeatureFlag.default("ff1", defaultValue = enabled))
+    }
+
+    private fun expectNPSEnabled(value: Boolean) {
+        every { npsEnabled.get() } returns value
     }
 }

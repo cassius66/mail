@@ -57,5 +57,6 @@ private val ProtonPackages = listOf(
     "me.proton.android.drive",
     "me.proton.android.calendar",
     "proton.android.pass",
-    "me.proton.wallet.android"
+    "me.proton.wallet.android",
+    "me.proton.android.lumo"
 )

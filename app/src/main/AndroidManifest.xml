@@ -35,6 +35,7 @@
         <package android:name="ch.protonvpn.android" />
         <package android:name="proton.android.pass" />
         <package android:name="me.proton.wallet.android" />
+        <package android:name="me.proton.android.lumo" />
     </queries>
 
     <application
