@@ -21,7 +21,7 @@ package ch.protonmail.android.mailupselling.presentation.usecase
 import ch.protonmail.android.mailcommon.domain.MailFeatureId
 import ch.protonmail.android.mailcommon.domain.usecase.ObserveMailFeature
 import ch.protonmail.android.mailcommon.domain.usecase.ObservePrimaryUser
-import ch.protonmail.android.mailupselling.domain.annotations.DriveSpotlightEnabled
+import ch.protonmail.android.mailupselling.domain.annotations.NPSEnabled
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -32,13 +32,13 @@ import javax.inject.Inject
 class ObserveNPSEligibility @Inject constructor(
     private val observePrimaryUser: ObservePrimaryUser,
     private val observeMailFeature: ObserveMailFeature,
-    @DriveSpotlightEnabled private val driveSpotlightEnabled: Boolean
+    @NPSEnabled private val npsEnabled: Boolean
 ) {
     operator fun invoke(): Flow<Boolean> = observePrimaryUser()
         .distinctUntilChanged()
         .flatMapLatest { user ->
             if (user == null) return@flatMapLatest flowOf(false)
-            if (!driveSpotlightEnabled) return@flatMapLatest flowOf(false)
+            if (!npsEnabled) return@flatMapLatest flowOf(false)
             observeMailFeature(user.userId, MailFeatureId.NPSFeedback).map { npsFeatureFlag ->
                 npsFeatureFlag.value
             }
