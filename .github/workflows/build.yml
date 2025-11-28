@@ -1,0 +1,81 @@
+name: Auto Build Mail
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check upstream
+        id: check
+        run: |
+          UPSTREAM_TAG=$(curl -s https://api.github.com/repos/ProtonMail/android-mail/releases/latest | jq -r .tag_name)
+          FORK_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+          echo "upstream=$UPSTREAM_TAG" >> $GITHUB_OUTPUT
+          echo "fork=$FORK_TAG" >> $GITHUB_OUTPUT
+          if [ "$UPSTREAM_TAG" != "$FORK_TAG" ] && [ "$UPSTREAM_TAG" != "null" ]; then
+            echo "new=true" >> $GITHUB_OUTPUT
+          else
+            echo "new=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Merge upstream
+        if: steps.check.outputs.new == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git remote add upstream https://github.com/ProtonMail/android-mail.git
+          git fetch upstream --tags
+          git merge ${{ steps.check.outputs.upstream }} -m "Merge ${{ steps.check.outputs.upstream }}"
+
+      - name: Apply customizations
+        if: steps.check.outputs.new == 'true'
+        run: |
+          cp -rf custom-icons/android/res/mipmap-* app/src/main/res/
+          sed -i 's/Proton Mail/Mail/g' app/src/main/res/values/strings.xml
+
+      - uses: actions/setup-java@v4
+        if: steps.check.outputs.new == 'true'
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Build
+        if: steps.check.outputs.new == 'true'
+        run: ./gradlew assembleProdRelease
+
+      - name: Sign
+        if: steps.check.outputs.new == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore.jks
+          ${ANDROID_HOME}/build-tools/35.0.0/apksigner sign \
+            --ks keystore.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass pass:"$KEYSTORE_PASSWORD" \
+            --key-pass pass:"$KEY_PASSWORD" \
+            --out mail-${{ steps.check.outputs.upstream }}.apk \
+            app/build/outputs/apk/prod/release/app-prod-release.apk
+
+      - name: Release
+        if: steps.check.outputs.new == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.check.outputs.upstream }}
+          name: "Mail ${{ steps.check.outputs.upstream }}"
+          files: mail-${{ steps.check.outputs.upstream }}.apk
