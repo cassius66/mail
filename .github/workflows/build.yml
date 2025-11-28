@@ -51,6 +51,10 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Setup google-services
+        if: steps.check.outputs.new == 'true'
+        run: cp config/google-services/dummy-google-services.json app/google-services.json
+
       - name: Build
         if: steps.check.outputs.new == 'true'
         run: ./gradlew assembleProdRelease
